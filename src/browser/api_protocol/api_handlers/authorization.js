@@ -8,10 +8,10 @@ import ofEvents from '../../of_events';
 let _ = require('underscore');
 let log = require('../../log');
 import socketServer from '../../transports/socket_server';
-let ProcessTracker = require('../../process_tracker.js');
+import ProcessTracker from '../../process_tracker';
 const rvmMessageBus = require('../../rvm/rvm_message_bus').rvmMessageBus;
 import route from '../../../common/route';
-import { lockUuid } from '../../uuid_availability';
+import { lockUuid, releaseUuid } from '../../uuid_availability';
 const successAck = {
     success: true
 };
@@ -188,7 +188,7 @@ function cleanPendingRequest(authObj) {
     }
 }
 
-module.exports.init = function() {
+export const init = function() {
     socketServer.on(route.connection('close'), id => {
         var keyToDelete,
             externalConnection;
@@ -203,6 +203,9 @@ module.exports.init = function() {
         externalConnection = ExternalApplication.getExternalConnectionById(id);
         if (externalConnection) {
             ExternalApplication.removeExternalConnection(externalConnection);
+            if (!externalConnection.runtimeClient) {
+                releaseUuid(externalConnection.uuid);
+            }
             ofEvents.emit(route('externalconn', 'closed'), externalConnection);
         }
 
@@ -235,6 +238,6 @@ const isConnectionAuthenticated = (msg, next) => {
     next();
 };
 
-module.exports.registerMiddleware = function(requestHandler) {
+export const registerMiddleware = function(requestHandler) {
     requestHandler.addPreProcessor(isConnectionAuthenticated);
 };

@@ -37,6 +37,7 @@ import { ERROR_BOX_TYPES } from '../../common/errors';
 import { deregisterAllRuntimeProxyWindows } from '../window_groups_runtime_proxy';
 import { releaseUuid } from '../uuid_availability';
 import { launch } from '../../../js-adapter/src/main';
+import { externalWindows } from './external_window';
 
 const subscriptionManager = new SubscriptionManager();
 const TRAY_ICON_KEY = 'tray-icon-events';
@@ -44,7 +45,7 @@ let runtimeIsClosing = false;
 let hasPlugins = false;
 let rvmBus;
 let MonitorInfo;
-var Application = {};
+export const Application = {};
 let fetchingIcon = {};
 let registeredUsersByApp = {};
 
@@ -74,7 +75,7 @@ electronApp.on('ready', function() {
     rvmBus = require('../rvm/rvm_message_bus').rvmMessageBus;
     log.writeToLog(1, 'RVM MESSAGE BUS READY', true);
 
-    MonitorInfo = require('../monitor_info.js');
+    MonitorInfo = require('../monitor_info.js').default;
 
     // listen to and broadcast 'broadcast' messages from RVM as an openfin app event
     rvmBus.on(route.rvmMessageBus('broadcast', 'application', 'manifest-changed'), payload => {
@@ -720,6 +721,12 @@ function run(identity, mainWindowOpts, userAppConfigArgs) {
                 //deregister all proxy windows
                 deregisterAllRuntimeProxyWindows();
 
+                // Release all external windows to prevent bringing them
+                // down when the runtime closes.
+                externalWindows.forEach((nativeWindow) => {
+                    nativeWindow.setExternalWindowNativeId('');
+                });
+
                 // Force close any windows that have slipped past core-state
                 BrowserWindow.getAllWindows().forEach(function(window) {
                     window.close();
@@ -1242,4 +1249,3 @@ function checkApplicationAvailability(uuid) {
         return null;
     }
 }
-module.exports.Application = Application;

@@ -14,8 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { basename } from 'path';
 import { BrowserWindow as OFBrowserWindow } from '../shapes';
-import { BrowserWindow, Rectangle, screen } from 'electron';
+import { BrowserWindow, Rectangle, screen, NativeWindowInfo } from 'electron';
 import * as Shapes from '../shapes';
 
 /*
@@ -72,9 +73,50 @@ function clamp(num: number, min: number = 0, max: number = Number.MAX_SAFE_INTEG
   return Math.min(Math.max(num, min, 0), max);
 }
 
-export function extendNativeWindowInfo(rawNativeWindowInfo: Shapes.RawNativeWindowInfo): Shapes.NativeWindowInfo {
+/*
+  Returns lite version of external window info object
+*/
+export function getNativeWindowInfoLite(rawNativeWindowInfo: NativeWindowInfo): Shapes.NativeWindowInfoLite {
+  let name = capitalize(basename(rawNativeWindowInfo.process.imageName, '.exe'));
+
+  if (name === 'ApplicationFrameHost') {
+    name = rawNativeWindowInfo.title;
+  }
+
   return {
-    ...rawNativeWindowInfo,
-    uuid: rawNativeWindowInfo.id
+    name,
+    process: {
+      injected: rawNativeWindowInfo.process.injected,
+      pid: rawNativeWindowInfo.process.pid
+    },
+    title: rawNativeWindowInfo.title,
+    uuid: rawNativeWindowInfo.id,
+    visible: rawNativeWindowInfo.visible
   };
+}
+
+/*
+  Returns full version of external window info object
+*/
+export function getNativeWindowInfo(rawNativeWindowInfo: NativeWindowInfo): Shapes.NativeWindowInfo {
+  const liteInfoObject = getNativeWindowInfoLite(rawNativeWindowInfo);
+  const fullInfoObject = <Shapes.NativeWindowInfo>liteInfoObject;
+
+  fullInfoObject.alwaysOnTop = rawNativeWindowInfo.alwaysOnTop;
+  fullInfoObject.bounds = rawNativeWindowInfo.bounds;
+  fullInfoObject.className = rawNativeWindowInfo.className;
+  fullInfoObject.dpi = rawNativeWindowInfo.dpi;
+  fullInfoObject.dpiAwareness = rawNativeWindowInfo.dpiAwareness;
+  fullInfoObject.focused = rawNativeWindowInfo.focused;
+  fullInfoObject.maximized = rawNativeWindowInfo.maximized;
+  fullInfoObject.minimized = rawNativeWindowInfo.minimized;
+
+  return fullInfoObject;
+}
+
+/*
+  Capitalizes a string.
+*/
+export function capitalize(string: string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
 }
