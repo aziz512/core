@@ -241,6 +241,20 @@ app.on('chrome-browser-process-created', function() {
     }
 });
 
+
+function startLoggingMemoryProfile() {
+    const heapProfile = require('heap-profile');
+
+    heapProfile.start();
+
+    // Write a snapshot to disk every 10 seconds
+    setInterval(() => {
+        heapProfile.write((err, filename) => {
+            log.writeToLog('info', `heapProfile.write. err: ${err} filename: ${filename}`);
+        });
+    }, 10 * 1000).unref();
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', function() {
@@ -402,6 +416,7 @@ app.on('ready', function() {
     }
     handleDeferredLaunches();
     logSystemMemoryInfo();
+    startLoggingMemoryProfile();
 }); // end app.ready
 
 function staggerPortBroadcast(myPortInfo) {
