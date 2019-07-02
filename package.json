@@ -61,6 +61,7 @@
     "wrench": "^1.5.9"
   },
   "dependencies": {
+    "heap-profile": "^0.3.2",
     "minimist": "^1.2.0",
     "options": "0.0.6",
     "rxjs": "^5.5.12",
